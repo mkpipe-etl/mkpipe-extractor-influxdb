@@ -32,7 +32,18 @@ class InfluxDBExtractor(BaseExtractor, variant='influxdb'):
 
         measurement = table.name
 
-        if table.replication_method.value == 'incremental' and last_point:
+        has_static_bounds = table.filter_lower_bound is not None or table.filter_upper_bound is not None
+
+        if has_static_bounds:
+            range_start = table.filter_lower_bound or '-30d'
+            range_stop = f', stop: {table.filter_upper_bound}' if table.filter_upper_bound else ''
+            flux_query = (
+                f'from(bucket: "{self.bucket}") '
+                f'|> range(start: {range_start}{range_stop}) '
+                f'|> filter(fn: (r) => r._measurement == "{measurement}")'
+            )
+            write_mode = 'overwrite'
+        elif table.replication_method.value == 'incremental' and last_point:
             flux_query = (
                 f'from(bucket: "{self.bucket}") '
                 f'|> range(start: {last_point}) '
