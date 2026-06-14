@@ -42,7 +42,7 @@ class InfluxDBExtractor(BaseExtractor, variant='influxdb'):
                 f'|> range(start: {range_start}{range_stop}) '
                 f'|> filter(fn: (r) => r._measurement == "{measurement}")'
             )
-            write_mode = 'overwrite'
+            write_mode = 'append'
         elif table.replication_method.value == 'incremental' and last_point:
             flux_query = (
                 f'from(bucket: "{self.bucket}") '
